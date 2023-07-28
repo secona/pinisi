@@ -1,3 +1,6 @@
+use pinisi::Explorer;
+
 fn main() {
-    println!("Hello, world!");
+    let explorer = Explorer::default();
+    explorer.print_items();
 }
