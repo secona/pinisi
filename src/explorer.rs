@@ -1,13 +1,13 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
 pub struct Explorer {
-    path: String,
+    path: PathBuf,
 }
 
 impl Default for Explorer {
     fn default() -> Self {
         Self {
-            path: String::from("."),
+            path: PathBuf::from("."),
         }
     }
 }
