@@ -1,6 +1,6 @@
 use pinisi::Explorer;
 
 fn main() {
-    let explorer = Explorer::default();
+    let mut explorer = Explorer::default();
     explorer.print_items();
 }

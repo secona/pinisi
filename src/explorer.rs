@@ -1,26 +1,25 @@
-use std::{fs, path::PathBuf};
+use crate::directory::Directory;
 
 pub struct Explorer {
-    path: PathBuf,
+    directory: Directory,
 }
 
 impl Default for Explorer {
     fn default() -> Self {
         Self {
-            path: PathBuf::from("."),
+            directory: Directory::new(),
         }
     }
 }
 
 impl Explorer {
-    pub fn print_items(&self) {
-        let items = fs::read_dir(&self.path).unwrap();
-        for item in items {
-            let item = item.unwrap();
-            let is_dir = item.metadata().unwrap().is_dir();
+    pub fn print_items(&mut self) {
+        self.directory.refresh();
+        for item in &self.directory.items {
+            let meta = item.metadata().unwrap();
             println!(
                 "{} {}",
-                if is_dir { "DIR" } else { "   " },
+                if meta.is_dir() { "DIR" } else { "   " },
                 item.path().display()
             );
         }
