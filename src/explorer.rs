@@ -46,7 +46,8 @@ impl Explorer {
 
         for (i, item) in self.directory.items.iter().enumerate() {
             let meta = item.metadata().unwrap();
-            let display = item.path().display().to_string();
+            let path = item.path();
+            let display = path.file_name().unwrap();
 
             if self.cursor.position == i {
                 print!("{}", color::Bg(color::Blue));
@@ -54,8 +55,8 @@ impl Explorer {
 
             println!(
                 "{} {}{}\r",
-                if meta.is_dir() { "DIR" } else { "   " },
-                display,
+                if meta.is_dir() { "[D]" } else { "[F]" },
+                display.to_str().unwrap(),
                 " ".repeat(self.terminal.width - 4 - display.len()),
             );
 

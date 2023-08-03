@@ -24,10 +24,14 @@ impl Directory {
         let items = fs::read_dir(&self.path).unwrap().collect::<Vec<_>>();
         self.count = items.len();
         self.items = Vec::new();
+
         for item in items {
             let item = item.unwrap();
             self.items.push(item);
         }
+
+        self.items
+            .sort_by_key(|item| !item.metadata().unwrap().is_dir());
     }
 
     pub fn cd(&mut self, path: PathBuf) {
