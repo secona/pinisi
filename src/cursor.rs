@@ -1,7 +1,7 @@
 use crate::directory::Directory;
 
 pub struct Cursor {
-    pub position: i32,
+    pub position: usize,
     pub max: i32,
 }
 
