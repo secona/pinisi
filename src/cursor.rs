@@ -23,4 +23,9 @@ impl Cursor {
 
         self.position = value;
     }
+
+    pub fn update(&mut self, directory: &Directory) {
+        self.position = 0;
+        self.max = directory.count - 1;
+    }
 }
