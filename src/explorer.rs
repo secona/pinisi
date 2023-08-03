@@ -1,13 +1,16 @@
-use crate::directory::Directory;
+use crate::{cursor::Cursor, directory::Directory};
 
 pub struct Explorer {
     directory: Directory,
+    cursor: Cursor,
 }
 
 impl Default for Explorer {
     fn default() -> Self {
+        let directory = Directory::new();
         Self {
-            directory: Directory::new(),
+            cursor: Cursor::from(&directory),
+            directory,
         }
     }
 }

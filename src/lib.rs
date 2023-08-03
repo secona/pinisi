@@ -1,3 +1,4 @@
+mod cursor;
 mod directory;
 mod explorer;
 
