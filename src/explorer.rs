@@ -65,6 +65,8 @@ impl Explorer {
         let key = Terminal::read_input().unwrap();
         match key {
             Key::Ctrl('q') => self.should_quit = true,
+            Key::Char('k') | Key::Up => self.cursor.mut_move_relative(-1),
+            Key::Char('j') | Key::Down => self.cursor.mut_move_relative(1),
             _ => {}
         }
     }
