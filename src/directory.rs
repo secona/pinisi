@@ -39,7 +39,7 @@ impl Directory {
         self.refresh();
     }
 
-    pub fn item_at(&self, index: usize) -> &DirEntry {
-        self.items.get(index).unwrap()
+    pub fn item_at(&self, index: usize) -> Option<&DirEntry> {
+        self.items.get(index)
     }
 }

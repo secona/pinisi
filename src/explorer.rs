@@ -6,6 +6,7 @@ pub struct Explorer {
     cursor: Cursor,
     terminal: Terminal,
     should_quit: bool,
+    offset: usize,
 }
 
 impl Default for Explorer {
@@ -17,6 +18,7 @@ impl Default for Explorer {
             directory,
             terminal: Terminal::default(),
             should_quit: false,
+            offset: 0,
         }
     }
 }
@@ -39,12 +41,35 @@ impl Explorer {
         Terminal::cursor_show();
     }
 
+    fn scroll(&mut self) {
+        if self.cursor.position >= self.offset + self.terminal.height - 3 {
+            self.offset += 1;
+        }
+
+        if self.cursor.position < self.offset {
+            self.offset -= 1;
+        }
+    }
+
     fn refresh_screen(&mut self) {
         Terminal::cursor_goto(1, 1);
         Terminal::clear_after_cursor();
         println!("{:?}\r", self.directory.path);
+        println!(
+            "{}/{} || {} {} {}\r",
+            self.cursor.position + 1,
+            self.cursor.max + 1,
+            self.cursor.position,
+            self.offset,
+            self.terminal.height
+        );
 
-        for (i, item) in self.directory.items.iter().enumerate() {
+        for i in self.offset..self.terminal.height - 3 + self.offset {
+            let item = match self.directory.item_at(i) {
+                Some(item) => item,
+                None => break,
+            };
+
             let meta = item.metadata().unwrap();
             let path = item.path();
             let display = path.file_name().unwrap();
@@ -74,10 +99,11 @@ impl Explorer {
             Key::Char('h') | Key::Left => self.cd_parent(),
             _ => {}
         }
+        self.scroll();
     }
 
     pub fn cd_subdir(&mut self) {
-        let item = self.directory.item_at(self.cursor.position);
+        let item = self.directory.item_at(self.cursor.position).unwrap();
         let meta = item.metadata().unwrap();
 
         if meta.is_dir() {
