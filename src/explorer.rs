@@ -113,9 +113,13 @@ impl Explorer {
     }
 
     pub fn cd_parent(&mut self) {
-        let previous_path = self.directory.path.clone();
         let path = self.directory.path.clone();
-        let parent = path.parent().unwrap();
+
+        let parent = match path.parent() {
+            Some(parent) => parent,
+            None => return,
+        };
+
         self.directory.cd(parent);
         self.cursor.update(&self.directory);
 
@@ -123,7 +127,7 @@ impl Explorer {
             .directory
             .items
             .iter()
-            .position(|item| item.path() == previous_path)
+            .position(|item| item.path() == path)
             .unwrap_or(0);
 
         self.cursor.position = index;
