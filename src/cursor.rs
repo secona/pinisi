@@ -26,6 +26,6 @@ impl Cursor {
 
     pub fn update(&mut self, directory: &Directory) {
         self.position = 0;
-        self.max = directory.count - 1;
+        self.max = directory.count.checked_sub(1).unwrap_or(0);
     }
 }
