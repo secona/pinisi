@@ -1,7 +1,7 @@
 use std::{
     env,
     fs::{self, DirEntry},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub struct Directory {
@@ -34,8 +34,8 @@ impl Directory {
             .sort_by_key(|item| !item.metadata().unwrap().is_dir());
     }
 
-    pub fn cd(&mut self, path: PathBuf) {
-        self.path = path;
+    pub fn cd(&mut self, path: &Path) {
+        self.path = PathBuf::from(path);
         self.refresh();
     }
 

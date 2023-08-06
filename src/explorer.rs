@@ -107,14 +107,25 @@ impl Explorer {
         let meta = item.metadata().unwrap();
 
         if meta.is_dir() {
-            self.directory.cd(item.path());
+            self.directory.cd(&item.path());
             self.cursor.update(&self.directory);
         }
     }
 
     pub fn cd_parent(&mut self) {
-        let parent = self.directory.path.parent().unwrap().to_path_buf();
+        let previous_path = self.directory.path.clone();
+        let path = self.directory.path.clone();
+        let parent = path.parent().unwrap();
         self.directory.cd(parent);
         self.cursor.update(&self.directory);
+
+        let index = self
+            .directory
+            .items
+            .iter()
+            .position(|item| item.path() == previous_path)
+            .unwrap_or(0);
+
+        self.cursor.position = index;
     }
 }
