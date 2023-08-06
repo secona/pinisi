@@ -93,8 +93,8 @@ impl Explorer {
         let key = Terminal::read_input().unwrap();
         match key {
             Key::Ctrl('q') => self.should_quit = true,
-            Key::Char('k') | Key::Up => self.cursor.mut_move_relative(-1),
-            Key::Char('j') | Key::Down => self.cursor.mut_move_relative(1),
+            Key::Char('k') | Key::Up => self.cursor.mut_move_rel(-1),
+            Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
             Key::Char('l') | Key::Right => self.cd_subdir(),
             Key::Char('h') | Key::Left => self.cd_parent(),
             _ => {}
@@ -130,6 +130,6 @@ impl Explorer {
             .position(|item| item.path() == path)
             .unwrap_or(0);
 
-        self.cursor.position = index;
+        self.cursor.mut_move_abs(index);
     }
 }
