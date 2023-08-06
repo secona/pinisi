@@ -70,8 +70,7 @@ impl Explorer {
                 None => break,
             };
 
-            let meta = item.metadata().unwrap();
-            let path = item.path();
+            let path = item.entry.path();
             let display = path.file_name().unwrap();
 
             if self.cursor.position == i {
@@ -80,7 +79,7 @@ impl Explorer {
 
             println!(
                 "{} {}{}\r",
-                if meta.is_dir() { "[D]" } else { "[F]" },
+                if item.meta.is_dir() { "[D]" } else { "[F]" },
                 display.to_str().unwrap(),
                 " ".repeat(self.terminal.width - 4 - display.len()),
             );
@@ -105,10 +104,9 @@ impl Explorer {
 
     pub fn cd_subdir(&mut self) {
         let item = self.directory.item_at(self.cursor.position).unwrap();
-        let meta = item.metadata().unwrap();
 
-        if meta.is_dir() {
-            self.directory.cd(&item.path());
+        if item.meta.is_dir() {
+            self.directory.cd(&item.entry.path());
             self.cursor.update(&self.directory);
         }
     }
@@ -128,7 +126,7 @@ impl Explorer {
             .directory
             .items
             .iter()
-            .position(|item| item.path() == path)
+            .position(|item| item.entry.path() == path)
             .unwrap_or(0);
 
         self.cursor.mut_move_abs(index);

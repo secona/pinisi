@@ -1,13 +1,13 @@
+use crate::item::Item;
 use std::{
-    env,
-    fs::{self, DirEntry},
+    env, fs,
     path::{Path, PathBuf},
 };
 
 pub struct Directory {
     pub path: PathBuf,
     pub count: usize,
-    pub items: Vec<DirEntry>,
+    pub items: Vec<Item>,
 }
 
 impl Directory {
@@ -21,17 +21,15 @@ impl Directory {
     }
 
     pub fn refresh(&mut self) {
-        let items = fs::read_dir(&self.path).unwrap().collect::<Vec<_>>();
-        self.count = items.len();
+        let entries = fs::read_dir(&self.path).unwrap().collect::<Vec<_>>();
+        self.count = entries.len();
         self.items = Vec::new();
 
-        for item in items {
-            let item = item.unwrap();
-            self.items.push(item);
+        for entry in entries {
+            self.items.push(Item::from(entry.unwrap()));
         }
 
-        self.items
-            .sort_by_key(|item| !item.metadata().unwrap().is_dir());
+        self.items.sort_by_key(|item| !item.meta.is_dir());
     }
 
     pub fn cd(&mut self, path: &Path) {
@@ -39,14 +37,14 @@ impl Directory {
         self.refresh();
     }
 
-    pub fn item_at(&self, index: usize) -> Option<&DirEntry> {
+    pub fn item_at(&self, index: usize) -> Option<&Item> {
         self.items.get(index)
     }
 
     pub fn delete_item(&mut self, index: usize) {
-        let file = self.item_at(index).unwrap();
-        if !file.metadata().unwrap().is_dir() {
-            fs::remove_file(file.path()).unwrap();
+        let item = self.item_at(index).unwrap();
+        if !item.meta.is_dir() {
+            fs::remove_file(item.entry.path()).unwrap();
         }
         self.refresh();
     }
