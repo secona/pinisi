@@ -97,6 +97,7 @@ impl Explorer {
             Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
             Key::Char('l') | Key::Right => self.cd_subdir(),
             Key::Char('h') | Key::Left => self.cd_parent(),
+            Key::Char('x') => self.directory.delete_item(self.cursor.position),
             _ => {}
         }
         self.scroll();

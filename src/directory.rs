@@ -42,4 +42,12 @@ impl Directory {
     pub fn item_at(&self, index: usize) -> Option<&DirEntry> {
         self.items.get(index)
     }
+
+    pub fn delete_item(&mut self, index: usize) {
+        let file = self.item_at(index).unwrap();
+        if !file.metadata().unwrap().is_dir() {
+            fs::remove_file(file.path()).unwrap();
+        }
+        self.refresh();
+    }
 }
