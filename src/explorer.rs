@@ -1,10 +1,11 @@
-use crate::{cursor::Cursor, directory::Directory, terminal::Terminal};
+use crate::{cursor::Cursor, directory::Directory, mode::Mode, terminal::Terminal};
 use termion::{color, event::Key};
 
 pub struct Explorer {
     directory: Directory,
     cursor: Cursor,
     terminal: Terminal,
+    mode: Mode,
     should_quit: bool,
     offset: usize,
 }
@@ -17,6 +18,7 @@ impl Default for Explorer {
             cursor: Cursor::from(&directory),
             directory,
             terminal: Terminal::default(),
+            mode: Mode::default(),
             should_quit: false,
             offset: 0,
         }
@@ -42,7 +44,7 @@ impl Explorer {
     }
 
     fn scroll(&mut self) {
-        if self.cursor.position >= self.offset + self.terminal.height - 3 {
+        if self.cursor.position >= self.offset + self.terminal.height - 2 {
             self.offset += 1;
         }
 
@@ -54,20 +56,30 @@ impl Explorer {
     fn refresh_screen(&mut self) {
         Terminal::cursor_goto(1, 1);
         Terminal::clear_after_cursor();
-        println!("{:?}\r", self.directory.path);
-        println!(
-            "{}/{} || {} {} {}\r",
-            self.cursor.position + 1,
-            self.cursor.max + 1,
-            self.cursor.position,
-            self.offset,
-            self.terminal.height
-        );
+        // println!("{:?}\r", self.directory.path);
+        // println!(
+        //     "{}/{} || {} {} {}\r",
+        //     self.cursor.position + 1,
+        //     self.cursor.max + 1,
+        //     self.cursor.position,
+        //     self.offset,
+        //     self.terminal.height
+        // );
+        self.print_items();
+        self.print_status();
+        self.print_message();
 
-        for i in self.offset..self.terminal.height - 3 + self.offset {
+        Terminal::flush().unwrap();
+    }
+
+    fn print_items(&self) {
+        for i in self.offset..self.terminal.height - 2 + self.offset {
             let item = match self.directory.item_at(i) {
                 Some(item) => item,
-                None => break,
+                None => {
+                    println!("\r");
+                    continue;
+                }
             };
 
             let path = item.entry.path();
@@ -86,6 +98,29 @@ impl Explorer {
 
             print!("{}", color::Bg(color::Reset));
         }
+    }
+
+    fn print_status(&self) {
+        let status = format!(
+            "[{:?}] [{}/{}]",
+            self.directory.path,
+            self.cursor.position + 1,
+            self.cursor.max + 1,
+        );
+
+        println!(
+            "{}{}{}{}{}{}\r",
+            color::Bg(color::Rgb(239, 239, 239)),
+            color::Fg(color::Black),
+            status,
+            " ".repeat(self.terminal.width - status.len()),
+            color::Bg(color::Reset),
+            color::Fg(color::Reset)
+        );
+    }
+
+    fn print_message(&self) {
+        print!("{}", self.mode);
     }
 
     pub fn handle_keypress(&mut self) {

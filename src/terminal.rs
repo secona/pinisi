@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
@@ -47,5 +47,9 @@ impl Terminal {
 
     pub fn cursor_goto(x: u16, y: u16) {
         print!("{}", termion::cursor::Goto(x, y));
+    }
+
+    pub fn flush() -> Result<(), io::Error> {
+        io::stdout().flush()
     }
 }
