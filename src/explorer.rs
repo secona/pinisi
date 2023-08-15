@@ -11,7 +11,6 @@ pub struct Explorer {
     cursor: Cursor,
     terminal: Terminal,
     mode: Mode,
-    should_quit: bool,
     offset: usize,
     input: String,
 }
@@ -25,7 +24,6 @@ impl Default for Explorer {
             directory,
             terminal: Terminal::default(),
             mode: Mode::default(),
-            should_quit: false,
             offset: 0,
             input: String::new(),
         }
@@ -40,7 +38,7 @@ impl Explorer {
         loop {
             self.refresh_screen();
 
-            if self.should_quit {
+            if matches!(self.mode.get(), Modes::Quit) {
                 break;
             }
 
@@ -128,7 +126,7 @@ impl Explorer {
     pub fn handle_keypress(&mut self) {
         let key = Terminal::read_input().unwrap();
         match key {
-            Key::Ctrl('q') => self.should_quit = true,
+            Key::Ctrl('q') => self.mode.switch(Modes::Quit),
             Key::Char('k') | Key::Up => self.cursor.mut_move_rel(-1),
             Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
             Key::Char('l') | Key::Right => self.cd_subdir(),
