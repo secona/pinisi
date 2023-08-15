@@ -1,4 +1,9 @@
-use crate::{cursor::Cursor, directory::Directory, mode::Mode, terminal::Terminal};
+use crate::{
+    cursor::Cursor,
+    directory::Directory,
+    mode::{Mode, Modes},
+    terminal::Terminal,
+};
 use termion::{color, event::Key};
 
 pub struct Explorer {
@@ -8,6 +13,7 @@ pub struct Explorer {
     mode: Mode,
     should_quit: bool,
     offset: usize,
+    input: String,
 }
 
 impl Default for Explorer {
@@ -21,6 +27,7 @@ impl Default for Explorer {
             mode: Mode::default(),
             should_quit: false,
             offset: 0,
+            input: String::new(),
         }
     }
 }
@@ -56,15 +63,7 @@ impl Explorer {
     fn refresh_screen(&mut self) {
         Terminal::cursor_goto(1, 1);
         Terminal::clear_after_cursor();
-        // println!("{:?}\r", self.directory.path);
-        // println!(
-        //     "{}/{} || {} {} {}\r",
-        //     self.cursor.position + 1,
-        //     self.cursor.max + 1,
-        //     self.cursor.position,
-        //     self.offset,
-        //     self.terminal.height
-        // );
+
         self.print_items();
         self.print_status();
         self.print_message();
@@ -120,7 +119,10 @@ impl Explorer {
     }
 
     fn print_message(&self) {
-        print!("{}", self.mode);
+        match self.mode.get() {
+            Modes::Input => print!("{}", self.input),
+            _ => print!("{}", self.mode),
+        };
     }
 
     pub fn handle_keypress(&mut self) {
@@ -131,6 +133,7 @@ impl Explorer {
             Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
             Key::Char('l') | Key::Right => self.cd_subdir(),
             Key::Char('h') | Key::Left => self.cd_parent(),
+            Key::Char('r') => self.prompt(),
             Key::Char('x') => self.directory.delete_item(self.cursor.position),
             _ => {}
         }
@@ -165,5 +168,25 @@ impl Explorer {
             .unwrap_or(0);
 
         self.cursor.mut_move_abs(index);
+    }
+
+    pub fn prompt(&mut self) {
+        self.mode.switch(Modes::Input);
+        Terminal::cursor_show();
+        Terminal::cursor_goto(1, self.terminal.height as u16);
+
+        loop {
+            self.refresh_screen();
+            let key = Terminal::read_input().unwrap();
+            match key {
+                Key::Char('\n') => break,
+                Key::Char(c) => self.input.push(c),
+                _ => {}
+            }
+        }
+
+        Terminal::cursor_hide();
+        Terminal::cursor_goto(1, 1);
+        self.mode.switch(Modes::Explore);
     }
 }

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-enum Modes {
+pub enum Modes {
     Explore,
     Move,
     Input,
@@ -35,5 +35,15 @@ impl Default for Mode {
 impl std::fmt::Display for Mode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "-- {} --", self.mode.to_string())
+    }
+}
+
+impl Mode {
+    pub fn get(&self) -> &Modes {
+        &self.mode
+    }
+
+    pub fn switch(&mut self, mode: Modes) {
+        self.mode = mode;
     }
 }
