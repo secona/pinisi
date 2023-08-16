@@ -177,6 +177,9 @@ impl Explorer {
             self.refresh_screen();
             let key = Terminal::read_input().unwrap();
             match key {
+                Key::Backspace => {
+                    self.input.pop();
+                }
                 Key::Char('\n') => break,
                 Key::Char(c) => self.input.push(c),
                 _ => {}
