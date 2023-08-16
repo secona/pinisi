@@ -13,6 +13,7 @@ pub struct Explorer {
     mode: Mode,
     offset: usize,
     input: String,
+    cursor_text: u16,
 }
 
 impl Default for Explorer {
@@ -26,6 +27,7 @@ impl Default for Explorer {
             mode: Mode::default(),
             offset: 0,
             input: String::new(),
+            cursor_text: 0,
         }
     }
 }
@@ -66,6 +68,7 @@ impl Explorer {
         self.print_status();
         self.print_message();
 
+        Terminal::cursor_goto(self.cursor_text + 1, self.terminal.height as u16);
         Terminal::flush().unwrap();
     }
 
@@ -181,7 +184,20 @@ impl Explorer {
                     self.input.pop();
                 }
                 Key::Char('\n') => break,
-                Key::Char(c) => self.input.push(c),
+                Key::Char(c) => {
+                    self.input.push(c);
+                    self.cursor_text = self.cursor_text.saturating_add(1);
+                }
+                Key::Left => {
+                    if self.cursor_text > 1 {
+                        self.cursor_text = self.cursor_text.saturating_sub(1);
+                    }
+                }
+                Key::Right => {
+                    if (self.cursor_text as usize) < self.input.len() {
+                        self.cursor_text = self.cursor_text.saturating_add(1);
+                    }
+                }
                 _ => {}
             }
         }
