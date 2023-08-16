@@ -185,7 +185,17 @@ impl Explorer {
                 }
                 Key::Char('\n') => break,
                 Key::Char(c) => {
-                    self.input.push(c);
+                    let mut result: String = self.input[..]
+                        .chars()
+                        .take(self.cursor_text as usize)
+                        .collect();
+                    let remainder: String = self.input[..]
+                        .chars()
+                        .skip(self.cursor_text as usize)
+                        .collect();
+                    result.push(c);
+                    result.push_str(&remainder);
+                    self.input = result;
                     self.cursor_text = self.cursor_text.saturating_add(1);
                 }
                 Key::Left => {
