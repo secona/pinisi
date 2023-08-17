@@ -13,21 +13,22 @@ pub struct Explorer {
     mode: Mode,
     offset: usize,
     input: String,
-    cursor_text: u16,
+    cursor_text: Cursor,
 }
 
 impl Default for Explorer {
     fn default() -> Self {
         let mut directory = Directory::new();
+        let terminal = Terminal::default();
         directory.refresh();
         Self {
             cursor: Cursor::from(&directory),
-            directory,
-            terminal: Terminal::default(),
+            cursor_text: Cursor::new(0, terminal.height),
             mode: Mode::default(),
-            offset: 0,
             input: String::new(),
-            cursor_text: 0,
+            offset: 0,
+            directory,
+            terminal,
         }
     }
 }
@@ -68,7 +69,10 @@ impl Explorer {
         self.print_status();
         self.print_message();
 
-        Terminal::cursor_goto(self.cursor_text + 1, self.terminal.height as u16);
+        Terminal::cursor_goto(
+            (self.cursor_text.position + 1) as u16,
+            self.terminal.height as u16,
+        );
         Terminal::flush().unwrap();
     }
 
@@ -187,25 +191,25 @@ impl Explorer {
                 Key::Char(c) => {
                     let mut result: String = self.input[..]
                         .chars()
-                        .take(self.cursor_text as usize)
+                        .take(self.cursor_text.position)
                         .collect();
                     let remainder: String = self.input[..]
                         .chars()
-                        .skip(self.cursor_text as usize)
+                        .skip(self.cursor_text.position)
                         .collect();
                     result.push(c);
                     result.push_str(&remainder);
                     self.input = result;
-                    self.cursor_text = self.cursor_text.saturating_add(1);
+                    self.cursor_text.mut_move_rel(1);
                 }
                 Key::Left => {
-                    if self.cursor_text > 1 {
-                        self.cursor_text = self.cursor_text.saturating_sub(1);
+                    if self.cursor_text.position > 1 {
+                        self.cursor_text.mut_move_rel(-1);
                     }
                 }
                 Key::Right => {
-                    if (self.cursor_text as usize) < self.input.len() {
-                        self.cursor_text = self.cursor_text.saturating_add(1);
+                    if (self.cursor_text.position) < self.input.len() {
+                        self.cursor_text.mut_move_rel(1);
                     }
                 }
                 _ => {}

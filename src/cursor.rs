@@ -15,6 +15,10 @@ impl From<&Directory> for Cursor {
 }
 
 impl Cursor {
+    pub fn new(position: usize, max: usize) -> Self {
+        Self { position, max }
+    }
+
     pub fn mut_move_rel(&mut self, value: isize) {
         let value = self
             .position
