@@ -1,3 +1,5 @@
+use std::{fs, path::PathBuf};
+
 use crate::{
     cursor::Cursor,
     directory::Directory,
@@ -23,7 +25,7 @@ impl Default for Explorer {
         directory.refresh();
         Self {
             cursor: Cursor::from(&directory),
-            cursor_text: Cursor::new(0, terminal.height),
+            cursor_text: Cursor::new(0, terminal.width),
             mode: Mode::default(),
             input: String::new(),
             offset: 0,
@@ -138,7 +140,18 @@ impl Explorer {
             Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
             Key::Char('l') | Key::Right => self.cd_subdir(),
             Key::Char('h') | Key::Left => self.cd_parent(),
-            Key::Char('r') => self.prompt(),
+            Key::Char('r') => {
+                let item = self.directory.item_at(self.cursor.position).unwrap();
+                let old_name = item.entry.path();
+                let prompt = self.prompt(Some(old_name.to_str().unwrap()));
+
+                let mut new_name = PathBuf::new();
+                new_name.push(old_name.parent().unwrap().to_str().unwrap());
+                new_name.push(prompt);
+
+                fs::rename(old_name.clone(), new_name).unwrap();
+                self.directory.refresh();
+            }
             Key::Char('x') => self.directory.delete_item(self.cursor.position),
             _ => {}
         }
@@ -175,35 +188,37 @@ impl Explorer {
         self.cursor.mut_move_abs(index);
     }
 
-    pub fn prompt(&mut self) {
+    pub fn prompt(&mut self, default: Option<&str>) -> String {
+        if let Some(value) = default {
+            self.input = String::from(value);
+        }
+
         self.mode.switch(Modes::Input);
+        self.cursor_text.mut_move_abs(self.input.len());
         Terminal::cursor_show();
-        Terminal::cursor_goto(1, self.terminal.height as u16);
 
         loop {
             self.refresh_screen();
             let key = Terminal::read_input().unwrap();
             match key {
-                Key::Backspace => {
-                    self.input.pop();
-                }
                 Key::Char('\n') => break,
+                Key::Delete => {
+                    if self.cursor_text.position < self.input.len() {
+                        self.input.remove(self.cursor_text.position);
+                    }
+                }
+                Key::Backspace => {
+                    if self.cursor_text.position > 0 {
+                        self.input.remove(self.cursor_text.position - 1);
+                        self.cursor_text.mut_move_rel(-1);
+                    }
+                }
                 Key::Char(c) => {
-                    let mut result: String = self.input[..]
-                        .chars()
-                        .take(self.cursor_text.position)
-                        .collect();
-                    let remainder: String = self.input[..]
-                        .chars()
-                        .skip(self.cursor_text.position)
-                        .collect();
-                    result.push(c);
-                    result.push_str(&remainder);
-                    self.input = result;
+                    self.input.insert(self.cursor_text.position, c);
                     self.cursor_text.mut_move_rel(1);
                 }
                 Key::Left => {
-                    if self.cursor_text.position > 1 {
+                    if self.cursor_text.position >= 1 {
                         self.cursor_text.mut_move_rel(-1);
                     }
                 }
@@ -219,5 +234,9 @@ impl Explorer {
         Terminal::cursor_hide();
         Terminal::cursor_goto(1, 1);
         self.mode.switch(Modes::Explore);
+
+        let prompt_result = self.input.clone();
+        self.input = String::new();
+        prompt_result
     }
 }
