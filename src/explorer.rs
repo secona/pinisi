@@ -161,11 +161,14 @@ impl Explorer {
     }
 
     pub fn cd_subdir(&mut self) {
-        let item = self.directory.item_at(self.cursor.position).unwrap();
-
-        if item.meta.is_dir() {
-            self.directory.cd(&item.entry.path());
-            self.cursor.update(&self.directory);
+        match self.directory.item_at(self.cursor.position) {
+            None => {}
+            Some(item) => {
+                if item.meta.is_dir() {
+                    self.directory.cd(&item.entry.path());
+                    self.cursor.update(&self.directory);
+                }
+            }
         }
     }
 
