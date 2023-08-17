@@ -145,12 +145,14 @@ impl Explorer {
                 let old_name = item.entry.path();
                 let prompt = self.prompt(Some(old_name.to_str().unwrap()));
 
-                let mut new_name = PathBuf::new();
-                new_name.push(old_name.parent().unwrap().to_str().unwrap());
-                new_name.push(prompt);
+                if let Some(value) = prompt {
+                    let mut new_name = PathBuf::new();
+                    new_name.push(old_name.parent().unwrap().to_str().unwrap());
+                    new_name.push(value);
 
-                fs::rename(old_name.clone(), new_name).unwrap();
-                self.directory.refresh();
+                    fs::rename(old_name.clone(), new_name).unwrap();
+                    self.directory.refresh();
+                }
             }
             Key::Char('x') => self.directory.delete_item(self.cursor.position),
             _ => {}
@@ -188,11 +190,12 @@ impl Explorer {
         self.cursor.mut_move_abs(index);
     }
 
-    pub fn prompt(&mut self, default: Option<&str>) -> String {
+    pub fn prompt(&mut self, default: Option<&str>) -> Option<String> {
         if let Some(value) = default {
             self.input = String::from(value);
         }
 
+        let mut return_value: Option<String> = None;
         self.mode.switch(Modes::Input);
         self.cursor_text.mut_move_abs(self.input.len());
         Terminal::cursor_show();
@@ -201,7 +204,8 @@ impl Explorer {
             self.refresh_screen();
             let key = Terminal::read_input().unwrap();
             match key {
-                Key::Char('\n') => break,
+                Key::Char('\n') => return_value = Some(self.input.clone()),
+                Key::Esc => return_value = None,
                 Key::Delete => {
                     if self.cursor_text.position < self.input.len() {
                         self.input.remove(self.cursor_text.position);
@@ -229,14 +233,12 @@ impl Explorer {
                 }
                 _ => {}
             }
+
+            Terminal::cursor_hide();
+            Terminal::cursor_goto(1, 1);
+            self.mode.switch(Modes::Explore);
+            self.input = String::new();
+            return return_value;
         }
-
-        Terminal::cursor_hide();
-        Terminal::cursor_goto(1, 1);
-        self.mode.switch(Modes::Explore);
-
-        let prompt_result = self.input.clone();
-        self.input = String::new();
-        prompt_result
     }
 }
