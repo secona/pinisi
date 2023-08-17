@@ -195,7 +195,7 @@ impl Explorer {
             self.input = String::from(value);
         }
 
-        let mut return_value: Option<String> = None;
+        let return_value: Option<String>;
         self.mode.switch(Modes::Input);
         self.cursor_text.mut_move_abs(self.input.len());
         Terminal::cursor_show();
@@ -204,8 +204,14 @@ impl Explorer {
             self.refresh_screen();
             let key = Terminal::read_input().unwrap();
             match key {
-                Key::Char('\n') => return_value = Some(self.input.clone()),
-                Key::Esc => return_value = None,
+                Key::Char('\n') => {
+                    return_value = Some(self.input.clone());
+                    break;
+                }
+                Key::Esc => {
+                    return_value = None;
+                    break;
+                }
                 Key::Delete => {
                     if self.cursor_text.position < self.input.len() {
                         self.input.remove(self.cursor_text.position);
@@ -233,12 +239,12 @@ impl Explorer {
                 }
                 _ => {}
             }
-
-            Terminal::cursor_hide();
-            Terminal::cursor_goto(1, 1);
-            self.mode.switch(Modes::Explore);
-            self.input = String::new();
-            return return_value;
         }
+
+        Terminal::cursor_hide();
+        Terminal::cursor_goto(1, 1);
+        self.mode.switch(Modes::Explore);
+        self.input = String::new();
+        return_value
     }
 }
