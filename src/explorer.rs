@@ -16,6 +16,8 @@ pub struct Explorer {
     offset: usize,
     input: String,
     cursor_text: Cursor,
+    selected: Vec<usize>,
+    start_select: Option<usize>,
 }
 
 impl Default for Explorer {
@@ -28,6 +30,8 @@ impl Default for Explorer {
             cursor_text: Cursor::new(0, terminal.width),
             mode: Mode::default(),
             input: String::new(),
+            selected: Vec::new(),
+            start_select: Some(0),
             offset: 0,
             directory,
             terminal,
@@ -91,8 +95,19 @@ impl Explorer {
             let path = item.entry.path();
             let display = path.file_name().unwrap();
 
-            if self.cursor.position == i {
-                print!("{}", color::Bg(color::Blue));
+            match self.mode.get() {
+                Modes::Select => {
+                    if self.cursor.position == i {
+                        print!("{}", color::Bg(color::Yellow));
+                    } else if self.selected.contains(&i) {
+                        print!("{}", color::Bg(color::LightYellow));
+                    }
+                }
+                _ => {
+                    if self.cursor.position == i {
+                        print!("{}", color::Bg(color::Blue));
+                    }
+                }
             }
 
             println!(
@@ -136,8 +151,30 @@ impl Explorer {
         let key = Terminal::read_input().unwrap();
         match key {
             Key::Ctrl('q') => self.mode.switch(Modes::Quit),
-            Key::Char('k') | Key::Up => self.cursor.mut_move_rel(-1),
-            Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
+            Key::Char('k') | Key::Up => {
+                self.cursor.mut_move_rel(-1);
+                if matches!(self.mode.get(), Modes::Select) {
+                    let start = self.start_select.unwrap();
+                    let cursor_pos = self.cursor.position.clone();
+                    if start < cursor_pos {
+                        self.selected = (start..=cursor_pos).collect();
+                    } else {
+                        self.selected = (cursor_pos..=start).collect();
+                    }
+                }
+            }
+            Key::Char('j') | Key::Down => {
+                self.cursor.mut_move_rel(1);
+                if matches!(self.mode.get(), Modes::Select) {
+                    let start = self.start_select.unwrap();
+                    let cursor_pos = self.cursor.position.clone();
+                    if start < cursor_pos {
+                        self.selected = (start..=cursor_pos).collect();
+                    } else {
+                        self.selected = (cursor_pos..=start).collect();
+                    }
+                }
+            }
             Key::Char('l') | Key::Right => self.cd_subdir(),
             Key::Char('h') | Key::Left => self.cd_parent(),
             Key::Char('r') => {
@@ -154,7 +191,32 @@ impl Explorer {
                     self.directory.refresh();
                 }
             }
-            Key::Char('x') => self.directory.delete_item(self.cursor.position),
+            Key::Char('s') => match self.mode.get() {
+                Modes::Explore => {
+                    self.mode.switch(Modes::Select);
+                    self.selected.push(self.cursor.position);
+                    self.start_select = Some(self.cursor.position);
+                }
+                Modes::Select => {
+                    self.mode.switch(Modes::Explore);
+                    self.selected = Vec::new();
+                    self.start_select = None;
+                }
+                _ => {}
+            },
+            Key::Char('x') => {
+                if matches!(self.mode.get(), Modes::Select) {
+                    for index in &self.selected {
+                        self.directory.delete_item(index);
+                    }
+                    self.mode.switch(Modes::Explore);
+                    self.cursor.mut_move_abs(0);
+                    self.selected = Vec::new();
+                    self.start_select = None;
+                } else {
+                    self.directory.delete_item(&self.cursor.position);
+                }
+            }
             _ => {}
         }
         self.scroll();

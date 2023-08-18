@@ -41,8 +41,8 @@ impl Directory {
         self.items.get(index)
     }
 
-    pub fn delete_item(&mut self, index: usize) {
-        let item = self.item_at(index).unwrap();
+    pub fn delete_item(&mut self, index: &usize) {
+        let item = self.item_at(index.clone()).unwrap();
         if !item.meta.is_dir() {
             fs::remove_file(item.entry.path()).unwrap();
         }
