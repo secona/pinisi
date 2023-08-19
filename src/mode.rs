@@ -1,10 +1,32 @@
 #![allow(dead_code)]
 
+use std::{cell::RefCell, rc::Rc};
+
+#[derive(Clone)]
+pub struct Selection {
+    pub start: usize,
+    pub selected: Vec<usize>,
+}
+
+impl Selection {
+    pub fn new(start: usize) -> Self {
+        Self {
+            start,
+            selected: vec![start],
+        }
+    }
+
+    pub fn set(&mut self, selected: Vec<usize>) {
+        self.selected = selected;
+    }
+}
+
+#[derive(Clone)]
 pub enum Modes {
     Explore,
     Move,
     Input,
-    Select,
+    Select(Rc<RefCell<Selection>>),
     Quit,
 }
 
@@ -14,7 +36,7 @@ impl ToString for Modes {
             Modes::Explore => "EXPLORE".to_string(),
             Modes::Move => "MOVE".to_string(),
             Modes::Input => "INPUT".to_string(),
-            Modes::Select => "SELECT".to_string(),
+            Modes::Select(_) => "SELECT".to_string(),
             Modes::Quit => "QUIT".to_string(),
         }
     }

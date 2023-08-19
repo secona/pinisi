@@ -1,9 +1,9 @@
-use std::{fs, path::PathBuf};
+use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
 
 use crate::{
     cursor::Cursor,
     directory::Directory,
-    mode::{Mode, Modes},
+    mode::{Mode, Modes, Selection},
     terminal::Terminal,
 };
 use termion::{color, event::Key};
@@ -16,8 +16,6 @@ pub struct Explorer {
     offset: usize,
     input: String,
     cursor_text: Cursor,
-    selected: Vec<usize>,
-    start_select: Option<usize>,
 }
 
 impl Default for Explorer {
@@ -30,8 +28,6 @@ impl Default for Explorer {
             cursor_text: Cursor::new(0, terminal.width),
             mode: Mode::default(),
             input: String::new(),
-            selected: Vec::new(),
-            start_select: Some(0),
             offset: 0,
             directory,
             terminal,
@@ -96,10 +92,10 @@ impl Explorer {
             let display = path.file_name().unwrap();
 
             match self.mode.get() {
-                Modes::Select => {
+                Modes::Select(selection) => {
                     if self.cursor.position == i {
                         print!("{}", color::Bg(color::Yellow));
-                    } else if self.selected.contains(&i) {
+                    } else if selection.borrow().selected.contains(&i) {
                         print!("{}", color::Bg(color::LightYellow));
                     }
                 }
@@ -149,7 +145,7 @@ impl Explorer {
 
     pub fn handle_keypress(&mut self) {
         let key = Terminal::read_input().unwrap();
-        match self.mode.get() {
+        match self.mode.get().clone() {
             Modes::Explore => match key {
                 Key::Ctrl('q') => self.mode.switch(Modes::Quit),
                 Key::Char('k') | Key::Up => self.cursor.mut_move_rel(-1),
@@ -171,49 +167,49 @@ impl Explorer {
                     }
                 }
                 Key::Char('s') => {
-                    self.mode.switch(Modes::Select);
-                    self.selected.push(self.cursor.position);
-                    self.start_select = Some(self.cursor.position);
+                    self.mode
+                        .switch(Modes::Select(Rc::new(RefCell::new(Selection::new(
+                            self.cursor.position,
+                        )))));
                 }
                 Key::Char('x') => {
                     self.directory.delete_item(&self.cursor.position);
                 }
                 _ => {}
             },
-            Modes::Select => match key {
+            Modes::Select(selection) => match key {
                 Key::Char('k') | Key::Up => {
+                    let mut selection = selection.borrow_mut();
                     self.cursor.mut_move_rel(-1);
-                    let start = self.start_select.unwrap();
+                    let start = selection.start;
                     let cursor_pos = self.cursor.position.clone();
                     if start < cursor_pos {
-                        self.selected = (start..=cursor_pos).collect();
+                        selection.set((start..=cursor_pos).collect());
                     } else {
-                        self.selected = (cursor_pos..=start).collect();
+                        selection.set((cursor_pos..=start).collect());
                     }
                 }
                 Key::Char('j') | Key::Down => {
+                    let mut selection = selection.borrow_mut();
                     self.cursor.mut_move_rel(1);
-                    let start = self.start_select.unwrap();
+                    let start = selection.start;
                     let cursor_pos = self.cursor.position.clone();
                     if start < cursor_pos {
-                        self.selected = (start..=cursor_pos).collect();
+                        selection.set((start..=cursor_pos).collect());
                     } else {
-                        self.selected = (cursor_pos..=start).collect();
+                        selection.set((cursor_pos..=start).collect());
                     }
                 }
                 Key::Char('s') => {
                     self.mode.switch(Modes::Explore);
-                    self.selected = Vec::new();
-                    self.start_select = None;
                 }
                 Key::Char('x') => {
-                    for index in &self.selected {
+                    self.mode.switch(Modes::Explore);
+                    let selection = selection.borrow();
+                    for index in &selection.selected {
                         self.directory.delete_item(index);
                     }
-                    self.mode.switch(Modes::Explore);
                     self.cursor.mut_move_abs(0);
-                    self.selected = Vec::new();
-                    self.start_select = None;
                 }
                 _ => {}
             },
