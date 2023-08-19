@@ -149,63 +149,64 @@ impl Explorer {
 
     pub fn handle_keypress(&mut self) {
         let key = Terminal::read_input().unwrap();
-        match key {
-            Key::Ctrl('q') => self.mode.switch(Modes::Quit),
-            Key::Char('k') | Key::Up => {
-                self.cursor.mut_move_rel(-1);
-                if matches!(self.mode.get(), Modes::Select) {
-                    let start = self.start_select.unwrap();
-                    let cursor_pos = self.cursor.position.clone();
-                    if start < cursor_pos {
-                        self.selected = (start..=cursor_pos).collect();
-                    } else {
-                        self.selected = (cursor_pos..=start).collect();
+        match self.mode.get() {
+            Modes::Explore => match key {
+                Key::Ctrl('q') => self.mode.switch(Modes::Quit),
+                Key::Char('k') | Key::Up => self.cursor.mut_move_rel(-1),
+                Key::Char('j') | Key::Down => self.cursor.mut_move_rel(1),
+                Key::Char('l') | Key::Right => self.cd_subdir(),
+                Key::Char('h') | Key::Left => self.cd_parent(),
+                Key::Char('r') => {
+                    let item = self.directory.item_at(self.cursor.position).unwrap();
+                    let old_name = item.entry.path();
+                    let prompt = self.prompt(Some(old_name.to_str().unwrap()));
+
+                    if let Some(value) = prompt {
+                        let mut new_name = PathBuf::new();
+                        new_name.push(old_name.parent().unwrap().to_str().unwrap());
+                        new_name.push(value);
+
+                        fs::rename(old_name.clone(), new_name).unwrap();
+                        self.directory.refresh();
                     }
                 }
-            }
-            Key::Char('j') | Key::Down => {
-                self.cursor.mut_move_rel(1);
-                if matches!(self.mode.get(), Modes::Select) {
-                    let start = self.start_select.unwrap();
-                    let cursor_pos = self.cursor.position.clone();
-                    if start < cursor_pos {
-                        self.selected = (start..=cursor_pos).collect();
-                    } else {
-                        self.selected = (cursor_pos..=start).collect();
-                    }
-                }
-            }
-            Key::Char('l') | Key::Right => self.cd_subdir(),
-            Key::Char('h') | Key::Left => self.cd_parent(),
-            Key::Char('r') => {
-                let item = self.directory.item_at(self.cursor.position).unwrap();
-                let old_name = item.entry.path();
-                let prompt = self.prompt(Some(old_name.to_str().unwrap()));
-
-                if let Some(value) = prompt {
-                    let mut new_name = PathBuf::new();
-                    new_name.push(old_name.parent().unwrap().to_str().unwrap());
-                    new_name.push(value);
-
-                    fs::rename(old_name.clone(), new_name).unwrap();
-                    self.directory.refresh();
-                }
-            }
-            Key::Char('s') => match self.mode.get() {
-                Modes::Explore => {
+                Key::Char('s') => {
                     self.mode.switch(Modes::Select);
                     self.selected.push(self.cursor.position);
                     self.start_select = Some(self.cursor.position);
                 }
-                Modes::Select => {
+                Key::Char('x') => {
+                    self.directory.delete_item(&self.cursor.position);
+                }
+                _ => {}
+            },
+            Modes::Select => match key {
+                Key::Char('k') | Key::Up => {
+                    self.cursor.mut_move_rel(-1);
+                    let start = self.start_select.unwrap();
+                    let cursor_pos = self.cursor.position.clone();
+                    if start < cursor_pos {
+                        self.selected = (start..=cursor_pos).collect();
+                    } else {
+                        self.selected = (cursor_pos..=start).collect();
+                    }
+                }
+                Key::Char('j') | Key::Down => {
+                    self.cursor.mut_move_rel(1);
+                    let start = self.start_select.unwrap();
+                    let cursor_pos = self.cursor.position.clone();
+                    if start < cursor_pos {
+                        self.selected = (start..=cursor_pos).collect();
+                    } else {
+                        self.selected = (cursor_pos..=start).collect();
+                    }
+                }
+                Key::Char('s') => {
                     self.mode.switch(Modes::Explore);
                     self.selected = Vec::new();
                     self.start_select = None;
                 }
-                _ => {}
-            },
-            Key::Char('x') => {
-                if matches!(self.mode.get(), Modes::Select) {
+                Key::Char('x') => {
                     for index in &self.selected {
                         self.directory.delete_item(index);
                     }
@@ -213,12 +214,12 @@ impl Explorer {
                     self.cursor.mut_move_abs(0);
                     self.selected = Vec::new();
                     self.start_select = None;
-                } else {
-                    self.directory.delete_item(&self.cursor.position);
                 }
-            }
+                _ => {}
+            },
             _ => {}
         }
+
         self.scroll();
     }
 
