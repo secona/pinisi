@@ -2,24 +2,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-#[derive(Clone)]
-pub struct Selection {
-    pub start: usize,
-    pub selected: Vec<usize>,
-}
-
-impl Selection {
-    pub fn new(start: usize) -> Self {
-        Self {
-            start,
-            selected: vec![start],
-        }
-    }
-
-    pub fn set(&mut self, selected: Vec<usize>) {
-        self.selected = selected;
-    }
-}
+use crate::selection::Selection;
 
 #[derive(Clone)]
 pub enum Modes {

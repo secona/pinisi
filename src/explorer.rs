@@ -3,7 +3,8 @@ use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
 use crate::{
     cursor::Cursor,
     directory::Directory,
-    mode::{Mode, Modes, Selection},
+    mode::{Mode, Modes},
+    selection::Selection,
     terminal::Terminal,
 };
 use termion::{color, event::Key};
@@ -179,36 +180,21 @@ impl Explorer {
             },
             Modes::Select(selection) => match key {
                 Key::Char('k') | Key::Up => {
-                    let mut selection = selection.borrow_mut();
                     self.cursor.mut_move_rel(-1);
-                    let start = selection.start;
-                    let cursor_pos = self.cursor.position.clone();
-                    if start < cursor_pos {
-                        selection.set((start..=cursor_pos).collect());
-                    } else {
-                        selection.set((cursor_pos..=start).collect());
-                    }
+                    selection.borrow_mut().update(&self.cursor.position);
                 }
                 Key::Char('j') | Key::Down => {
-                    let mut selection = selection.borrow_mut();
                     self.cursor.mut_move_rel(1);
-                    let start = selection.start;
-                    let cursor_pos = self.cursor.position.clone();
-                    if start < cursor_pos {
-                        selection.set((start..=cursor_pos).collect());
-                    } else {
-                        selection.set((cursor_pos..=start).collect());
-                    }
+                    selection.borrow_mut().update(&self.cursor.position);
                 }
                 Key::Char('s') => {
                     self.mode.switch(Modes::Explore);
                 }
                 Key::Char('x') => {
-                    self.mode.switch(Modes::Explore);
-                    let selection = selection.borrow();
-                    for index in &selection.selected {
+                    for index in &selection.borrow().selected {
                         self.directory.delete_item(index);
                     }
+                    self.mode.switch(Modes::Explore);
                     self.cursor.mut_move_abs(0);
                 }
                 _ => {}
