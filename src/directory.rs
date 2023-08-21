@@ -42,10 +42,22 @@ impl Directory {
     }
 
     pub fn delete_item(&mut self, index: &usize) {
-        let item = self.item_at(index.clone()).unwrap();
+        let item = self.item_at(*index).unwrap();
         if !item.meta.is_dir() {
             fs::remove_file(item.entry.path()).unwrap();
         }
+        self.refresh();
+    }
+
+    pub fn rename_item(&mut self, index: &usize, to: String) {
+        let item = self.item_at(*index).unwrap();
+        let old_name = item.entry.path();
+
+        let mut new_name = PathBuf::new();
+        new_name.push(old_name.parent().unwrap().to_str().unwrap());
+        new_name.push(to);
+
+        fs::rename(old_name.clone(), new_name).unwrap();
         self.refresh();
     }
 }

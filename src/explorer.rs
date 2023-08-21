@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     cursor::Cursor,
@@ -155,16 +155,11 @@ impl Explorer {
                 Key::Char('h') | Key::Left => self.cd_parent(),
                 Key::Char('r') => {
                     let item = self.directory.item_at(self.cursor.position).unwrap();
-                    let old_name = item.entry.path();
-                    let prompt = self.prompt(Some(old_name.to_str().unwrap()));
+                    let default_value = item.entry.path();
+                    let result = self.prompt(Some(default_value.to_str().unwrap()));
 
-                    if let Some(value) = prompt {
-                        let mut new_name = PathBuf::new();
-                        new_name.push(old_name.parent().unwrap().to_str().unwrap());
-                        new_name.push(value);
-
-                        fs::rename(old_name.clone(), new_name).unwrap();
-                        self.directory.refresh();
+                    if let Some(value) = result {
+                        self.directory.rename_item(&self.cursor.position, value);
                     }
                 }
                 Key::Char('s') => {
