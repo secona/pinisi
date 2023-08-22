@@ -138,7 +138,7 @@ impl Explorer {
 
     fn print_message(&self) {
         match self.mode.get() {
-            Modes::Input => print!("{}", self.input),
+            Modes::Input(_) => print!("{}", self.input),
             _ => print!("{}", self.mode),
         };
     }
@@ -239,7 +239,7 @@ impl Explorer {
         }
 
         let return_value: Option<String>;
-        self.mode.switch(Modes::Input);
+        // self.mode.switch(Modes::Input);
         self.cursor_text.mut_move_abs(self.input.len());
         Terminal::cursor_show();
 

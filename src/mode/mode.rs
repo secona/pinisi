@@ -1,14 +1,12 @@
-#![allow(dead_code)]
-
 use std::{cell::RefCell, rc::Rc};
 
-use super::Selection;
+use super::{Input, Selection};
 
 #[derive(Clone)]
 pub enum Modes {
     Explore,
     Move,
-    Input,
+    Input(Rc<RefCell<Input>>),
     Select(Rc<RefCell<Selection>>),
     Quit,
 }
@@ -18,7 +16,7 @@ impl ToString for Modes {
         match self {
             Modes::Explore => "EXPLORE".to_string(),
             Modes::Move => "MOVE".to_string(),
-            Modes::Input => "INPUT".to_string(),
+            Modes::Input(_) => "INPUT".to_string(),
             Modes::Select(_) => "SELECT".to_string(),
             Modes::Quit => "QUIT".to_string(),
         }
