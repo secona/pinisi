@@ -21,9 +21,9 @@ pub struct Explorer {
 
 impl Default for Explorer {
     fn default() -> Self {
-        let mut directory = Directory::new();
+        let directory = Directory::default();
         let terminal = Terminal::default();
-        directory.refresh();
+
         Self {
             cursor: Cursor::from(&directory),
             cursor_text: Cursor::new(0, terminal.width),

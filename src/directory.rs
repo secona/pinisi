@@ -10,17 +10,25 @@ pub struct Directory {
     pub items: Vec<Item>,
 }
 
-impl Directory {
-    pub fn new() -> Self {
+impl Default for Directory {
+    fn default() -> Self {
         let path = env::current_dir().unwrap();
+        let mut entries: Vec<Item> = fs::read_dir(&path)
+            .unwrap()
+            .map(|entry| Item::from(entry.unwrap()))
+            .collect();
+        entries.sort_by_key(|item| !item.meta.is_dir());
+
         Self {
             path,
-            count: 0,
-            items: Vec::new(),
+            count: entries.len(),
+            items: entries,
         }
     }
+}
 
-    pub fn refresh(&mut self) {
+impl Directory {
+    fn refresh(&mut self) {
         let entries = fs::read_dir(&self.path).unwrap().collect::<Vec<_>>();
         self.count = entries.len();
         self.items = Vec::new();
