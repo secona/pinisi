@@ -2,7 +2,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::selection::Selection;
+use super::Selection;
 
 #[derive(Clone)]
 pub enum Modes {

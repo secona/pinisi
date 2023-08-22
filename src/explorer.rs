@@ -3,8 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{
     cursor::Cursor,
     directory::Directory,
-    mode::{Mode, Modes},
-    selection::Selection,
+    mode::{Mode, Modes, Selection},
     terminal::Terminal,
 };
 use termion::{color, event::Key};
