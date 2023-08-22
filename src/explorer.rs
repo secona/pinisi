@@ -169,6 +169,7 @@ impl Explorer {
                 }
                 Key::Char('x') => {
                     self.directory.delete_item(&self.cursor.position);
+                    self.cursor.update(&self.directory);
                 }
                 _ => {}
             },
